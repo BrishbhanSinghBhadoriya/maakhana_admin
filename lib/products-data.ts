@@ -1,0 +1,426 @@
+import { promises as fs } from 'fs';
+import path from 'path';
+
+export interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  dailyCost?: string;
+  category: string;
+  mealType?: string;
+  day?: string;
+  items?: string[];
+  kitchenCost?: string;
+  image: string;
+}
+
+const dataFilePath = path.join(process.cwd(), 'data', 'products.json');
+
+// Initialize with default products if file doesn't exist
+const defaultProducts: Product[] = [
+  {
+    id: 1,
+    name: 'Standard Veg Plan',
+    description: 'Vegetarian meals all 7 days - Breakfast, Lunch & Dinner',
+    price: 2310,
+    dailyCost: '₹110-120 per day',
+    category: 'subscription',
+    image: '🥗'
+  },
+  {
+    id: 2,
+    name: 'Standard Non-Veg Plan',
+    description: 'Veg meals + Non-veg on Wednesday & Sunday',
+    price: 2730,
+    dailyCost: '₹125-135 per day',
+    category: 'subscription',
+    image: '🍗'
+  },
+  {
+    id: 3,
+    name: 'Gym Bro Pack - Veg',
+    description: 'High-protein veg subscription - 150g+ protein daily',
+    price: 3465,
+    dailyCost: '₹155-175 per day',
+    category: 'subscription',
+    image: '💪'
+  },
+  {
+    id: 4,
+    name: 'Gym Bro Pack - Non-Veg',
+    description: 'High-protein with chicken/eggs - 150g+ protein daily',
+    price: 4095,
+    dailyCost: '₹185-210 per day',
+    category: 'subscription',
+    image: '🏋️'
+  },
+  {
+    id: 101,
+    name: 'Poha with Peanuts',
+    description: '250-280g cooked poha with peanuts + banana/seasonal fruit',
+    price: 50,
+    category: 'breakfast',
+    mealType: 'breakfast',
+    day: 'Monday',
+    kitchenCost: '₹24-32',
+    image: '🍚'
+  },
+  {
+    id: 102,
+    name: 'Vegetable Dalia',
+    description: '300g soft cooked dalia with optional ghee',
+    price: 50,
+    category: 'breakfast',
+    mealType: 'breakfast',
+    day: 'Tuesday',
+    kitchenCost: '₹24-32',
+    image: '🥣'
+  },
+  {
+    id: 103,
+    name: 'Besan Chilla Combo',
+    description: '2 medium besan chillas with chutney + small curd',
+    price: 60,
+    category: 'breakfast',
+    mealType: 'breakfast',
+    day: 'Wednesday',
+    kitchenCost: '₹24-32',
+    image: '🥞'
+  },
+  {
+    id: 104,
+    name: 'Masala Oats',
+    description: '300g thick Indian style oats with peanuts/sprouts',
+    price: 55,
+    category: 'breakfast',
+    mealType: 'breakfast',
+    day: 'Thursday',
+    kitchenCost: '₹24-32',
+    image: '🥣'
+  },
+  {
+    id: 105,
+    name: 'Aloo Paratha with Curd',
+    description: '1 large shallow cooked aloo paratha + fresh curd',
+    price: 65,
+    category: 'breakfast',
+    mealType: 'breakfast',
+    day: 'Friday',
+    kitchenCost: '₹24-32',
+    image: '🫓'
+  },
+  {
+    id: 106,
+    name: 'Vegetable Sandwich',
+    description: '2 filled triangle sandwiches with chutney + fruit',
+    price: 60,
+    category: 'breakfast',
+    mealType: 'breakfast',
+    day: 'Saturday',
+    kitchenCost: '₹24-32',
+    image: '🥪'
+  },
+  {
+    id: 107,
+    name: 'Cornflakes/Masala Oats',
+    description: 'Cornflakes or masala oats with milk + banana',
+    price: 55,
+    category: 'breakfast',
+    mealType: 'breakfast',
+    day: 'Sunday',
+    kitchenCost: '₹24-32',
+    image: '🥣'
+  },
+  {
+    id: 201,
+    name: 'Arhar Dal Combo',
+    description: 'Arhar dal + aloo gobhi + rice + 2 rotis + salad',
+    price: 110,
+    category: 'lunch',
+    mealType: 'lunch',
+    day: 'Monday',
+    items: ['Arhar Dal', 'Aloo Gobhi', 'Rice', '2 Rotis', 'Salad'],
+    kitchenCost: '₹42-55',
+    image: '🍛'
+  },
+  {
+    id: 202,
+    name: 'Rajma Combo',
+    description: 'Rajma + cabbage peas sabzi + rice + 2 rotis',
+    price: 115,
+    category: 'lunch',
+    mealType: 'lunch',
+    day: 'Tuesday',
+    items: ['Rajma', 'Cabbage Peas Sabzi', 'Rice', '2 Rotis'],
+    kitchenCost: '₹42-55',
+    image: '🍛'
+  },
+  {
+    id: 203,
+    name: 'Chole Combo',
+    description: 'Chole + lauki chana dal + rice + 2 rotis',
+    price: 120,
+    category: 'lunch',
+    mealType: 'lunch',
+    day: 'Wednesday',
+    items: ['Chole', 'Lauki Chana Dal', 'Rice', '2 Rotis'],
+    kitchenCost: '₹42-55',
+    image: '🍛'
+  },
+  {
+    id: 204,
+    name: 'Dal Makhani Combo',
+    description: 'Dal makhani (light) + seasonal veg + rice + 2 rotis',
+    price: 125,
+    category: 'lunch',
+    mealType: 'lunch',
+    day: 'Thursday',
+    items: ['Dal Makhani', 'Seasonal Veg', 'Rice', '2 Rotis'],
+    kitchenCost: '₹42-55',
+    image: '🍛'
+  },
+  {
+    id: 205,
+    name: 'Kadhi Pakoda Combo',
+    description: 'Kadhi pakoda + jeera aloo + rice + 2 rotis',
+    price: 115,
+    category: 'lunch',
+    mealType: 'lunch',
+    day: 'Friday',
+    items: ['Kadhi Pakoda', 'Jeera Aloo', 'Rice', '2 Rotis'],
+    kitchenCost: '₹42-55',
+    image: '🍛'
+  },
+  {
+    id: 206,
+    name: 'Mix Dal Combo',
+    description: 'Mix dal + bhindi fry + rice + 2 rotis',
+    price: 110,
+    category: 'lunch',
+    mealType: 'lunch',
+    day: 'Saturday',
+    items: ['Mix Dal', 'Bhindi Fry', 'Rice', '2 Rotis'],
+    kitchenCost: '₹42-55',
+    image: '🍛'
+  },
+  {
+    id: 207,
+    name: 'Veg Pulao Special',
+    description: 'Generous portion veg pulao + raita + papad',
+    price: 120,
+    category: 'lunch',
+    mealType: 'lunch',
+    day: 'Sunday',
+    items: ['Veg Pulao', 'Raita', 'Papad'],
+    kitchenCost: '₹42-55',
+    image: '🍚'
+  },
+  {
+    id: 301,
+    name: 'Dal & Roti Dinner',
+    description: '3 rotis + seasonal veg (150g) + dal (full bowl)',
+    price: 100,
+    category: 'dinner',
+    mealType: 'dinner',
+    day: 'Monday',
+    items: ['3 Rotis', 'Seasonal Veg 150g', 'Dal'],
+    kitchenCost: '₹42-55',
+    image: '🫓'
+  },
+  {
+    id: 302,
+    name: 'Dal Khichdi',
+    description: 'Rice + dal-heavy khichdi + optional ghee',
+    price: 95,
+    category: 'dinner',
+    mealType: 'dinner',
+    day: 'Tuesday',
+    items: ['Rice', 'Dal Khichdi', 'Ghee (optional)'],
+    kitchenCost: '₹42-55',
+    image: '🍚'
+  },
+  {
+    id: 303,
+    name: 'Matar Mushroom Dinner',
+    description: '3 rotis + matar mushroom + dal',
+    price: 110,
+    category: 'dinner',
+    mealType: 'dinner',
+    day: 'Wednesday',
+    items: ['3 Rotis', 'Matar Mushroom', 'Dal'],
+    kitchenCost: '₹42-55',
+    image: '🫓'
+  },
+  {
+    id: 304,
+    name: 'Lemon Dal Rice',
+    description: 'Rice + lemon dal + seasonal veg',
+    price: 95,
+    category: 'dinner',
+    mealType: 'dinner',
+    day: 'Thursday',
+    items: ['Rice', 'Lemon Dal', 'Seasonal Veg'],
+    kitchenCost: '₹42-55',
+    image: '🍚'
+  },
+  {
+    id: 305,
+    name: 'Paneer Bhurji Dinner',
+    description: '3 rotis + paneer bhurji (120-140g) + salad',
+    price: 140,
+    category: 'dinner',
+    mealType: 'dinner',
+    day: 'Friday',
+    items: ['3 Rotis', 'Paneer Bhurji 130g', 'Salad'],
+    kitchenCost: '₹42-55',
+    image: '🫓'
+  },
+  {
+    id: 306,
+    name: 'Veg Pulao Dinner',
+    description: 'Generous portion veg pulao + raita',
+    price: 110,
+    category: 'dinner',
+    mealType: 'dinner',
+    day: 'Saturday',
+    items: ['Veg Pulao', 'Raita'],
+    kitchenCost: '₹42-55',
+    image: '🍚'
+  },
+  {
+    id: 307,
+    name: 'Mixed Veg Curry',
+    description: '3 rotis + home-style mixed veg curry + dal',
+    price: 105,
+    category: 'dinner',
+    mealType: 'dinner',
+    day: 'Sunday',
+    items: ['3 Rotis', 'Mixed Veg Curry', 'Dal'],
+    kitchenCost: '₹42-55',
+    image: '🫓'
+  },
+  {
+    id: 401,
+    name: 'Chicken Curry (Wednesday)',
+    description: '140-160g raw chicken (110g cooked) + 3 rotis or rice',
+    price: 150,
+    category: 'nonveg',
+    mealType: 'dinner',
+    day: 'Wednesday',
+    kitchenCost: '₹50-55',
+    image: '🍗'
+  },
+  {
+    id: 402,
+    name: 'Chicken Masala (Sunday)',
+    description: 'Chicken masala or egg curry + rice + raita',
+    price: 150,
+    category: 'nonveg',
+    mealType: 'lunch',
+    day: 'Sunday',
+    kitchenCost: '₹50-55',
+    image: '🍗'
+  },
+  {
+    id: 501,
+    name: 'Gym Pack Breakfast',
+    description: '5 whole eggs + carb side (poha/oats/2 brown breads)',
+    price: 80,
+    category: 'gym',
+    mealType: 'breakfast',
+    items: ['5 Whole Eggs', 'Carb Side'],
+    image: '🥚'
+  },
+  {
+    id: 502,
+    name: 'Gym Pack Lunch (Veg)',
+    description: 'Double dal + soya chunks 60g or paneer 200g + 2 rotis',
+    price: 140,
+    category: 'gym',
+    mealType: 'lunch',
+    items: ['Double Dal', 'Soya/Paneer', '2 Rotis'],
+    image: '🥙'
+  },
+  {
+    id: 503,
+    name: 'Gym Pack Lunch (Non-Veg)',
+    description: 'Chicken breast 180-200g + small dal + 2 rotis',
+    price: 180,
+    category: 'gym',
+    mealType: 'lunch',
+    items: ['Chicken Breast 190g', 'Dal', '2 Rotis'],
+    image: '🍗'
+  },
+  {
+    id: 504,
+    name: 'Gym Pack Dinner',
+    description: 'Paneer 150-200g OR chicken 150g OR 3 eggs + 3 rotis + veg',
+    price: 160,
+    category: 'gym',
+    mealType: 'dinner',
+    items: ['High Protein (Choice)', '3 Rotis', 'Light Veg'],
+    image: '💪'
+  }
+];
+
+async function ensureDataFile(): Promise<void> {
+  const dataDir = path.join(process.cwd(), 'data');
+  try {
+    await fs.access(dataDir);
+  } catch {
+    await fs.mkdir(dataDir, { recursive: true });
+  }
+  
+  try {
+    await fs.access(dataFilePath);
+  } catch {
+    await fs.writeFile(dataFilePath, JSON.stringify(defaultProducts, null, 2), 'utf-8');
+  }
+}
+
+export async function getProducts(): Promise<Product[]> {
+  await ensureDataFile();
+  try {
+    const fileContents = await fs.readFile(dataFilePath, 'utf-8');
+    return JSON.parse(fileContents);
+  } catch (error) {
+    // If file read fails, return default products
+    return defaultProducts;
+  }
+}
+
+export async function saveProducts(products: Product[]): Promise<void> {
+  await ensureDataFile();
+  await fs.writeFile(dataFilePath, JSON.stringify(products, null, 2), 'utf-8');
+}
+
+export async function addProduct(product: Omit<Product, 'id'>): Promise<Product> {
+  const products = await getProducts();
+  const newId = Math.max(...products.map(p => p.id), 0) + 1;
+  const newProduct: Product = { ...product, id: newId };
+  products.push(newProduct);
+  await saveProducts(products);
+  return newProduct;
+}
+
+export async function updateProduct(id: number, updates: Partial<Product>): Promise<Product | null> {
+  const products = await getProducts();
+  const index = products.findIndex(p => p.id === id);
+  if (index === -1) return null;
+  
+  products[index] = { ...products[index], ...updates };
+  await saveProducts(products);
+  return products[index];
+}
+
+export async function deleteProduct(id: number): Promise<boolean> {
+  const products = await getProducts();
+  const index = products.findIndex(p => p.id === id);
+  if (index === -1) return false;
+  
+  products.splice(index, 1);
+  await saveProducts(products);
+  return true;
+}
+
