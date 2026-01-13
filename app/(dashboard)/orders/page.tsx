@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { Search, Eye, Package, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Search, Eye, Package, CheckCircle, Clock, XCircle, X } from 'lucide-react';
 
 interface Order {
   id: number;
@@ -19,6 +19,7 @@ interface Order {
 const OrdersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const orders: Order[] = [
     {
@@ -187,8 +188,8 @@ const OrdersPage: React.FC = () => {
         </div>
 
         {/* Orders Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
+          <table className="w-full min-w-[800px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -256,7 +257,10 @@ const OrdersPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                    <button 
+                      onClick={() => setSelectedOrder(order)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    >
                       <Eye size={20} />
                     </button>
                   </td>
@@ -303,6 +307,101 @@ const OrdersPage: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {/* Order Details Modal */}
+        {selectedOrder && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+              <div className="p-6 border-b flex justify-between items-center bg-gray-50 sticky top-0 z-10">
+                <h3 className="text-lg font-bold text-gray-900">Order Details</h3>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-200 rounded-full"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-6 overflow-y-auto">
+                {/* Header Info */}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm text-gray-500">Order ID</p>
+                    <p className="font-bold text-xl text-gray-900">{selectedOrder.orderId}</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedOrder.status)}`}>
+                    {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
+                  </span>
+                </div>
+
+                {/* Customer Info */}
+                <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                  <h4 className="font-semibold text-gray-900 flex items-center gap-2">
+                    Customer Information
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Name</p>
+                      <p className="font-medium text-gray-900">{selectedOrder.customerName}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Email</p>
+                      <p className="font-medium text-gray-900">{selectedOrder.email}</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="text-gray-500">Delivery Address</p>
+                      <p className="font-medium text-gray-900">{selectedOrder.address}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-3">Order Items</h4>
+                  <div className="border border-gray-200 rounded-xl divide-y divide-gray-200">
+                    {selectedOrder.items.map((item, idx) => (
+                      <div key={idx} className="p-3 text-sm flex items-center justify-between hover:bg-gray-50">
+                        <span className="font-medium text-gray-700">{item}</span>
+                        <span className="text-gray-400 text-xs">x1</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment & Dates */}
+                <div className="grid grid-cols-2 gap-6 pt-2">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Order Date</p>
+                    <p className="font-medium text-gray-900">{selectedOrder.orderDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Delivery Date</p>
+                    <p className="font-medium text-gray-900">{selectedOrder.deliveryDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Payment Status</p>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusColor(selectedOrder.paymentStatus)}`}>
+                      {selectedOrder.paymentStatus.charAt(0).toUpperCase() + selectedOrder.paymentStatus.slice(1)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+                    <p className="font-bold text-xl text-purple-600">₹{selectedOrder.totalAmount.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 border-t bg-gray-50 flex justify-end sticky bottom-0 z-10">
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                >
+                  Close Details
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

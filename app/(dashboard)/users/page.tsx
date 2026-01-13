@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Eye, MoreVertical, Moon } from 'lucide-react';
+import { Search, Eye, MoreVertical, Moon, X } from 'lucide-react';
 
 interface User {
   id: number;
@@ -17,6 +17,7 @@ interface User {
 
 export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const users: User[] = [
     {
@@ -124,8 +125,8 @@ export default function UserManagementPage() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden overflow-x-auto">
+          <table className="w-full min-w-[800px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -181,7 +182,10 @@ export default function UserManagementPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                    <button 
+                      onClick={() => setSelectedUser(user)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                    >
                       <Eye size={20} />
                     </button>
                   </td>
@@ -222,6 +226,68 @@ export default function UserManagementPage() {
             </p>
           </div>
         </div>
+
+        {/* User Details Modal */}
+        {selectedUser && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-6 border-b flex justify-between items-center bg-gray-50">
+                <h3 className="text-lg font-bold text-gray-900">User Details</h3>
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-2xl font-bold">
+                    {selectedUser.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-gray-900">{selectedUser.name}</h4>
+                    <p className="text-gray-500">{selectedUser.email}</p>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2 ${
+                      selectedUser.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedUser.status.charAt(0).toUpperCase() + selectedUser.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase">Contact</p>
+                    <p className="font-medium text-gray-900">{selectedUser.contact}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase">Joined</p>
+                    <p className="font-medium text-gray-900">{selectedUser.joinDate}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase">Total Orders</p>
+                    <p className="font-medium text-gray-900">{selectedUser.orders}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500 uppercase">Total Spent</p>
+                    <p className="font-medium text-purple-600">₹{selectedUser.orderValue.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 border-t bg-gray-50 flex justify-end">
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
