@@ -31,6 +31,6 @@ export const logout = async (): Promise<void> => {
  * Refresh access token using the refresh cookie
  */
 export const refresh = async (): Promise<{ accessToken: string; user: AdminUser }> => {
-    const { data } = await api.post('/admin/refresh');
+    const { data } = await api.post('/auth/refresh');
     return data;
 };
