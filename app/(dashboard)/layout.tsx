@@ -1,20 +1,15 @@
 import type { Metadata } from "next";
 import AdminShell from "@/components/layout/AdminShell";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export const metadata: Metadata = {
-  title: "Maa Khana Admin",
-  description: "Admin Dashboard for Maa Khana",
+    title: "Maa Khana Admin",
+    description: "Admin Dashboard for Maa Khana",
 };
 
 export default function DashboardLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
-  return (
-    <ProtectedRoute>
-      <AdminShell>{children}</AdminShell>
-    </ProtectedRoute>
-  );
+    return <AdminShell>{children}</AdminShell>;
 }
