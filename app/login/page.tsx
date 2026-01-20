@@ -1,51 +1,37 @@
 "use client"
-import React, { use, useState } from 'react';
+import React, { useState } from 'react';
 import { Eye, EyeOff, User, Lock } from 'lucide-react';
-import { useLogin } from '@/hooks/useLogin';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-const loginMutation =useLogin();
-const isLoading =
-  loginMutation.isPending && !loginMutation.isSuccess;
+  const { login } = useAuth();
+  const router = useRouter();
 
-const router=useRouter();
- const handleSubmit = async () => {
+  const handleSubmit = async () => {
+    if (!email || !password) return;
 
-
-    const response = await loginMutation.mutateAsync({
-      email,
-      password,
-    });
-    if(response.message==="Login successful"){
-          router.push('/dashboard');
-
-
-    toast.success(response.message);
-  }
-  else{
-    toast.error(response.message);
- 
-  }
-  
-
-
-
-  
-};
-    
-
-
-  
-
+    setIsSubmitting(true);
+    try {
+      await login({ email, password });
+      toast.success('Login successful');
+      // Redirect is handled inside AuthContext.login
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Invalid credentials';
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && email && password && !isLoading) {
+    if (e.key === 'Enter' && email && password && !isSubmitting) {
       handleSubmit();
     }
   };
@@ -121,13 +107,13 @@ const router=useRouter();
               </div>
             </div>
 
-            
+
             <button
               onClick={handleSubmit}
-              disabled={isLoading || !email || !password}
+              disabled={isSubmitting || !email || !password}
               className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-2.5 sm:py-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base mt-6 sm:mt-8"
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <span className="flex items-center justify-center">
                   <svg className="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -141,7 +127,7 @@ const router=useRouter();
             </button>
           </div>
 
-          
+
           <div className="mt-4 sm:mt-6 text-center">
             <p className="text-xs sm:text-sm text-gray-500">
               Secure admin access portal
