@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
-  const isLoggedIn = request.cookies.get("accessToken")?.value || request.cookies.get("refreshToken")?.value;
+  const isLoggedIn = request.cookies.get("token")?.value;
   console.log("isLoggedIn", isLoggedIn);
 
   const protectedRoutes = [
