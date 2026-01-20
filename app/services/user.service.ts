@@ -3,7 +3,8 @@ import { User } from '@/Types/User.types';
 
 export const login = async (payload: Partial<User>) => {
   
-  const { data } = await api.post('/admin/login', payload);
+  const { data } = await api.post('/admin/login', payload,{ withCredentials: true });
+    
   return data;
 };
 
