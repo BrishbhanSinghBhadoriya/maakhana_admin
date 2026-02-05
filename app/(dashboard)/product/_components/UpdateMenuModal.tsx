@@ -12,7 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Utensils, Scale, ChefHat, Carrot, Wheat, Soup, PenLine } from 'lucide-react';
+import { Loader2, Utensils, Scale, ChefHat, Carrot, Wheat, Soup, PenLine, Image as ImageIcon } from 'lucide-react';
 
 interface UpdateMenuModalProps {
     isOpen: boolean;
@@ -31,6 +31,7 @@ interface MenuFormData {
     vegetables: string;
     carbs: string;
     sides: string;
+    image: string;
 }
 
 export function UpdateMenuModal({
@@ -50,6 +51,7 @@ export function UpdateMenuModal({
             vegetables: (initialData?.vegetables || (initialData?.main && Array.isArray(initialData?.protein) ? initialData.protein : []))?.join(', ') || '',
             carbs: initialData?.carbs?.join(', ') || '',
             sides: initialData?.sides?.join(', ') || '',
+            image: initialData?.image || '',
         },
         enableReinitialize: true,
         onSubmit: async (values) => {
@@ -114,6 +116,21 @@ export function UpdateMenuModal({
                                 onBlur={formik.handleBlur}
                                 className="h-10 border-gray-200 focus-visible:ring-orange-500/20 focus-visible:border-orange-500 transition-all bg-gray-50/30"
                                 placeholder="e.g. Paneer Butter Masala"
+                            />
+                        </div>
+
+                        <div className="space-y-2.5">
+                            <Label htmlFor="image" className="text-gray-700 font-medium flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4 text-orange-500" /> Image URL
+                            </Label>
+                            <Input
+                                id="image"
+                                name="image"
+                                value={formik.values.image}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                className="h-10 border-gray-200 focus-visible:ring-orange-500/20 focus-visible:border-orange-500 transition-all bg-gray-50/30"
+                                placeholder="https://example.com/image.jpg"
                             />
                         </div>
 

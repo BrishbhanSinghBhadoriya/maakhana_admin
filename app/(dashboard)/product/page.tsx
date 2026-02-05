@@ -1,22 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, RefreshCcw, Utensils, Dumbbell, Pencil } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, RefreshCcw, Utensils, Dumbbell, Pencil, Sun, Moon, Star, Drumstick, Salad, Flame, Sparkles, Egg } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useGetProducts, useUpdateMenu } from '@/hooks/useProduct';
 import { Loader } from "@/components/ui/loader";
 import { useQueryClient } from "@tanstack/react-query";
-import { Root2, SubscriptionType, Menus, GymBroPack, Breakfast, Lunch, Dinner2 } from '@/Types/product.types';
+import { Root2, GymBroPack } from '@/Types/product.types';
 import { UpdateMenuModal } from './_components/UpdateMenuModal';
+import Image from 'next/image';
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
   const { data: productsData, isLoading, isError, error } = useGetProducts();
   const updateMenuMutation = useUpdateMenu();
-  const [activeTab, setActiveTab] = useState("menu");
+  const [activeTab, setActiveTab] = useState<'menu' | 'gymbro'>('menu');
+  const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner'>('breakfast');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentEditItem, setCurrentEditItem] = useState<{ day: string; type: string; data: any } | null>(null);
@@ -32,44 +32,45 @@ export default function ProductsPage() {
     let payload: any = {};
     const { day, type } = currentEditItem || {};
 
-    // Helper to construct GymBro payload
     if (day === 'Daily' || day === 'Vegetarian' || day === 'Non-Vegetarian') {
       const gymBroMap: Record<string, any> = {
-        'Breakfast': { key: 'breakfast', nested: false }, // No nested structure for breakfast anymore
+        'Breakfast': { key: 'breakfast', nested: false },
         'Dinner': { key: 'dinner', nested: false },
         'Lunch - Vegetarian': { key: 'lunch', subKey: 'veg', nested: true },
         'Lunch - Non-Vegetarian': { key: 'lunch', subKey: 'nonVeg', nested: true }
       };
 
-      // Construct key for lookup (Lunch has subtypes)
       const lookupKey = type === 'Lunch' ? `${type} - ${day}` : type;
       const config = gymBroMap[lookupKey!];
 
       if (config) {
-        // Map modal fields to GymBro schema
         let transformedData: any = {};
         if (lookupKey === 'Breakfast') {
           transformedData = {
             protein: updatedData.main,
-            carbs: updatedData.carbs
+            carbs: updatedData.carbs,
+            image: updatedData.image
           };
         } else if (lookupKey === 'Lunch - Vegetarian') {
           transformedData = {
             main: updatedData.main,
-            protein: updatedData.vegetables, // Modal's vegetables map to protein for GB Lunch Veg
-            carbs: updatedData.carbs
+            protein: updatedData.vegetables,
+            carbs: updatedData.carbs,
+            image: updatedData.image
           };
         } else if (lookupKey === 'Lunch - Non-Vegetarian') {
           transformedData = {
             main: updatedData.main,
             quantity: updatedData.quantity,
-            sides: updatedData.sides
+            sides: updatedData.sides,
+            image: updatedData.image
           };
         } else if (lookupKey === 'Dinner') {
           transformedData = {
             protein: updatedData.main.split(',').map((s: string) => s.trim()).filter(Boolean),
             carbs: updatedData.carbs,
-            vegetables: updatedData.vegetables
+            vegetables: updatedData.vegetables,
+            image: updatedData.image
           };
         }
 
@@ -90,8 +91,6 @@ export default function ProductsPage() {
         }
       }
     } else {
-      // Regular Menu Update (Breakfast/Lunch/Dinner)
-      // payload structure: { [type]: { items: { [day]: updatedData } } }
       if (type && day) {
         payload = {
           [type]: {
@@ -113,7 +112,6 @@ export default function ProductsPage() {
       console.error("Failed to update menu:", error);
     }
   };
-
 
   const productData: Root2 | undefined = productsData?.[0];
 
@@ -137,38 +135,160 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 sm:p-8 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Menu & Plans Management</h1>
-          <p className="text-gray-500 mt-1">Manage subscription plans, weekly menus, and special packs.</p>
-        </div>
+    <div className="bg-background relative pb-6">
+      {/* Background decorations */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-radial from-orange-200/30 to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-1/3 -left-40 w-80 h-80 bg-gradient-radial from-amber-200/20 to-transparent rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-gradient-radial from-orange-300/15 to-transparent rounded-full blur-3xl" />
       </div>
 
-      <Tabs defaultValue="menu" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-white p-1 border h-auto flex-wrap justify-start w-full sm:w-auto">
-          <TabsTrigger value="menu" className="px-6 py-2.5 gap-2 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
-            <Utensils className="h-4 w-4" /> Weekly Menu
-          </TabsTrigger>
-          <TabsTrigger value="gymbro" className="px-6 py-2.5 gap-2 data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700">
-            <Dumbbell className="h-4 w-4" /> Gym Bro Pack
-          </TabsTrigger>
-        </TabsList>
+      {/* Hero Section */}
+     <section className="pt-6 pb-4 px-4 sm:px-6 lg:px-8">
+  <div className="max-w-7xl mx-auto text-center">
+    
+    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4">
+      <Sparkles className="w-4 h-4 text-black" />
+      <span className="text-sm font-semibold text-black">Menu Management</span>
+    </div>
 
-        <TabsContent value="menu" className="space-y-6">
-          <MenuSection
-            breakfast={productData.breakfast}
-            lunch={productData.lunch}
-            dinner={productData.dinner}
-            onEdit={handleEditClick}
-          />
-        </TabsContent>
+    <h1 className="text-3xl md:text-4xl font-poppins font-bold mb-3 leading-tight">
+      <span className="text-black">Manage Your Menu</span><br />
+      <span className="text-black text-2xl md:text-4xl">Weekly Plans & Gym Packs</span>
+    </h1>
 
-        <TabsContent value="gymbro" className="space-y-6">
-          <GymBroSection gymBroPack={productData.gymBroPack} onEdit={handleEditClick} />
-        </TabsContent>
-      </Tabs>
+    <p className="text-base md:text-lg text-black max-w-2xl mx-auto mb-4">
+      Update breakfast, lunch, dinner menus and gym bro pack configurations
+    </p>
+
+    {/* Tab Buttons */}
+    <div className="flex flex-wrap justify-center gap-2">
+      <button
+        onClick={() => setActiveTab('menu')}
+        className={`px-5 py-2.5 rounded-lg font-semibold transition ${
+          activeTab === 'menu'
+            ? 'bg-orange-500 text-white shadow-md'
+            : 'bg-gray-100 text-black border border-gray-300 hover:bg-gray-200'
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          <Utensils className="w-4 h-4" />
+          Weekly Menu
+        </span>
+      </button>
+
+      <button
+        onClick={() => setActiveTab('gymbro')}
+        className={`px-5 py-2.5 rounded-lg font-semibold transition ${
+          activeTab === 'gymbro'
+            ? 'bg-purple-600 text-white shadow-md'
+            : 'bg-gray-100 text-black border border-gray-300 hover:bg-gray-200'
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          <Flame className="w-4 h-4" />
+          Gym Bro Pack
+        </span>
+      </button>
+    </div>
+
+  </div>
+</section>
+
+
+      {/* Weekly Menu Section */}
+      {activeTab === 'menu' && (
+        <section className="py-10 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-orange-50/30">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg icon-box-glow">
+                  <Star className="w-7 h-7 text-white" />
+                </div>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-poppins font-bold mb-4">
+                Weekly Menu Management
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Manage your 7-day meal rotations
+              </p>
+            </div>
+
+            {/* Meal Type Filter */}
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
+              <button
+                onClick={() => setSelectedMealType('breakfast')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  selectedMealType === 'breakfast'
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg scale-105'
+                    : 'bg-white/10 text-foreground hover:bg-white/20 border border-border'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Sun className="w-4 h-4" />
+                  Breakfast
+                </span>
+              </button>
+              <button
+                onClick={() => setSelectedMealType('lunch')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  selectedMealType === 'lunch'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg scale-105'
+                    : 'bg-white/10 text-foreground hover:bg-white/20 border border-border'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Sun className="w-4 h-4" />
+                  Lunch
+                </span>
+              </button>
+              <button
+                onClick={() => setSelectedMealType('dinner')}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  selectedMealType === 'dinner'
+                    ? 'bg-gradient-to-r from-purple-400 to-pink-500 text-white shadow-lg scale-105'
+                    : 'bg-white/10 text-foreground hover:bg-white/20 border border-border'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Moon className="w-4 h-4" />
+                  Dinner
+                </span>
+              </button>
+            </div>
+
+            {/* Menu Days Grid */}
+            <DailyMenuGrid
+              items={productData[selectedMealType].items}
+              type={selectedMealType}
+              onEdit={handleEditClick}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Gym Bro Pack Section */}
+      {activeTab === 'gymbro' && (
+        <section className="py-10 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-orange-50/30 to-background">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg icon-box-glow">
+                  <Flame className="w-7 h-7 text-white" />
+                </div>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-poppins font-bold mb-4">
+                Gym Bro Pack Management
+              </h2>
+              <p className="text-xl text-muted-foreground mb-6">
+                High-protein meal configurations
+              </p>
+            </div>
+
+            <GymBroGrid gymBroPack={productData.gymBroPack} onEdit={handleEditClick} />
+          </div>
+        </section>
+      )}
 
       {currentEditItem && (
         <UpdateMenuModal
@@ -184,108 +304,141 @@ export default function ProductsPage() {
   );
 }
 
-// --- Sub-Components ---
-
-
-
-function MenuSection({
-  breakfast,
-  lunch,
-  dinner,
-  onEdit
-}: {
-  breakfast: Breakfast;
-  lunch: Lunch;
-  dinner: Dinner2;
-  onEdit: (day: string, type: string, data: any) => void
-}) {
-  return (
-    <Tabs defaultValue="lunch" className="w-full">
-      <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent gap-6">
-        <TabsTrigger value="breakfast" className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:shadow-none px-4 py-3">Breakfast</TabsTrigger>
-        <TabsTrigger value="lunch" className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:shadow-none px-4 py-3">Lunch</TabsTrigger>
-        <TabsTrigger value="dinner" className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:shadow-none px-4 py-3">Dinner</TabsTrigger>
-      </TabsList>
-
-      <div className="mt-6">
-        <TabsContent value="breakfast">
-          <DailyGrid items={breakfast.items} type="breakfast" onEdit={onEdit} />
-        </TabsContent>
-        <TabsContent value="lunch">
-          <DailyGrid items={lunch.items} type="lunch" onEdit={onEdit} />
-        </TabsContent>
-        <TabsContent value="dinner">
-          <DailyGrid items={dinner.items} type="dinner" onEdit={onEdit} />
-        </TabsContent>
-      </div>
-    </Tabs>
-  );
-}
-
-function DailyGrid({ items, type, onEdit }: { items: any, type: string; onEdit: (day: string, type: string, data: any) => void }) {
+// Daily Menu Grid Component
+function DailyMenuGrid({ items, type, onEdit }: { items: any; type: string; onEdit: (day: string, type: string, data: any) => void }) {
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
+  // Different food images per meal-type + day (breakfast, lunch, dinner), all distinct
+  const imagesByType: Record<string, Record<string, string>> = {
+    breakfast: {
+      monday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298295/poha_zkegj5.png',   
+      tuesday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298293/khechdi_xr4voc.png',  
+      wednesday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298295/7_lzgxwk.png', 
+      thursday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298294/oots_cdevgd.png',   
+      friday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298297/8_exmytc.png', 
+      saturday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298295/sandbich_gurcqh.png', 
+      sunday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298296/9_ysgosg.png',   
+    },
+    lunch: {
+      monday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298296/11_fakzfj.png',
+      tuesday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298296/14_rmzf63.png',    
+      wednesday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298294/4_iml8ua.png', 
+      thursday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298293/1_guifrs.png',    
+      friday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298293/1_guifrs.png',   
+      saturday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298294/4_iml8ua.png', 
+      sunday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298295/6_vgwbyd.png',   
+    },
+    dinner: {
+      monday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302225/d1_p2tykc.png',   
+      tuesday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302235/d6_haxwts.png',  
+      wednesday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302226/d3_ftrm1f.png', 
+      thursday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302227/d4_ccgfsk.png', 
+      friday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302227/d4_ccgfsk.png',   
+      saturday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302219/d2_zb6crm.png',   
+      sunday: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302235/g3_itjv4l.png',  
+    },
+  };
+
+  const getMealIcon = () => {
+    if (type === 'breakfast') return Sun;
+    if (type === 'lunch') return Sun;
+    return Moon;
+  };
+
+  const getMealColor = () => {
+    if (type === 'breakfast') return 'from-yellow-400 to-orange-500';
+    if (type === 'lunch') return 'from-green-400 to-emerald-500';
+    return 'from-purple-400 to-pink-500';
+  };
+
+  const MealIcon = getMealIcon();
+  const gradientColor = getMealColor();
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {days.map(day => {
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {days.map((day, index) => {
         const dayItem = items[day];
         if (!dayItem) return null;
 
+        const imageSrc =
+          dayItem.image ||
+          imagesByType[type]?.[day] ||
+          'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800';
+
         return (
-          <Card key={day} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-0 shadow-md group bg-white">
-            <div className="relative h-48 w-full overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800"
-                alt={day}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+          <div
+            key={day}
+            className="card-premium rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-300 bg-white border border-border shadow-lg group"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            {/* Image Header */}
+            <div className="relative h-52 w-full overflow-hidden bg-white">
+              <Image
+                src={imageSrc}
+                alt={`${day} Menu`}
+                fill
+                className="object-cover p-3 transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute top-3 right-3 z-10 opacity-100 md:opacity-0 group-hover:md:opacity-100 transition-opacity duration-300 md:pointer-events-none group-hover:md:pointer-events-auto">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
+              
+              {/* Edit Button */}
+              <div className="absolute top-4 right-4">
                 <Button
                   size="icon"
-                  className="rounded-full h-10 w-10 bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white hover:text-orange-600 shadow-lg border border-white/20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(day, type, dayItem);
-                  }}
+                  className="rounded-full h-10 w-10 bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white hover:text-orange-600 shadow-lg border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onEdit(day, type, dayItem)}
                 >
                   <Pencil className="h-5 w-5" />
                 </Button>
               </div>
-              <div className="absolute bottom-4 left-4 right-4 text-white">
-                <Badge variant="secondary" className="mb-2 bg-orange-500/90 text-white hover:bg-orange-500 backdrop-blur-md border-0 capitalize shadow-sm">
-                  {type}
-                </Badge>
-                <h3 className="text-2xl font-bold capitalize tracking-tight text-white mb-0.5">{day}</h3>
-                {dayItem.name && <p className="text-white/80 text-sm line-clamp-1 font-medium">{dayItem.name}</p>}
+
+              <div className="absolute top-4 left-4">
+                <h3 className="text-xl font-poppins font-bold text-white drop-shadow-lg capitalize">
+                  {day}
+                </h3>
               </div>
             </div>
 
-            <CardContent className="p-5 space-y-4">
-              <div className="space-y-3">
-                {dayItem.main && (
-                  <div className="group/item">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Main Dish</span>
-                    <p className="text-gray-700 font-medium line-clamp-2 leading-snug">{dayItem.main}</p>
+            <div className="p-6">
+              <div className="space-y-4">
+                {/* Meal Type Badge */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={`w-8 h-8 bg-gradient-to-br ${gradientColor} rounded-lg flex items-center justify-center shadow-sm`}>
+                    <MealIcon className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-sm font-semibold text-primary uppercase">{type}</p>
+                </div>
+
+                {/* Main Content */}
+                {dayItem.name && (
+                  <div>
+                    <p className="font-semibold mb-1 text-foreground">{dayItem.name}</p>
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3 pt-1 border-t border-dashed border-gray-100">
+                {dayItem.main && (
+                  <div className="pb-3 border-b border-border">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Main Dish</span>
+                    <p className="font-medium text-foreground">{dayItem.main}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
                   {dayItem.quantity && (
-                    <div className="pt-2">
+                    <div>
                       <span className="text-xs font-bold text-gray-400 block mb-1">Quantity</span>
                       <span className="text-sm font-semibold text-gray-700">{dayItem.quantity}</span>
                     </div>
                   )}
                   {dayItem.style && (
-                    <div className="pt-2">
+                    <div>
                       <span className="text-xs font-bold text-gray-400 block mb-1">Style</span>
                       <span className="text-sm font-semibold text-gray-700">{dayItem.style}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-dashed border-gray-100">
+                <div className="space-y-3 pt-2 border-t border-dashed border-gray-100">
                   {dayItem.vegetables?.length > 0 && (
                     <div>
                       <span className="text-xs font-bold text-green-600/80 block mb-1.5 uppercase tracking-wider">Vegetables</span>
@@ -326,25 +479,24 @@ function DailyGrid({ items, type, onEdit }: { items: any, type: string; onEdit: 
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )
+            </div>
+          </div>
+        );
       })}
     </div>
-  )
+  );
 }
 
-function GymBroSection({ gymBroPack, onEdit }: { gymBroPack: GymBroPack; onEdit: (day: string, type: string, data: any) => void }) {
-
-  // Transform GymBroPack data into an array of displayable items
+// Gym Bro Grid Component
+function GymBroGrid({ gymBroPack, onEdit }: { gymBroPack: GymBroPack; onEdit: (day: string, type: string, data: any) => void }) {
   const mealItems = [
     {
       id: 'breakfast',
       title: 'Breakfast',
       sub: 'Daily',
-      image: 'https://images.unsplash.com/photo-1525351463629-487053856d6b?auto=format&fit=crop&q=80&w=800',
+      icon: Sun,
+      gradient: 'from-yellow-400 to-orange-500',
       data: gymBroPack.breakfast,
-      type: 'gymbro-breakfast', // Custom type key for modal
       displayData: {
         main: gymBroPack.breakfast.protein,
         carbs: gymBroPack.breakfast.carbs,
@@ -354,23 +506,22 @@ function GymBroSection({ gymBroPack, onEdit }: { gymBroPack: GymBroPack; onEdit:
       id: 'lunch-veg',
       title: 'Lunch',
       sub: 'Vegetarian',
-      image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=800',
+      icon: Salad,
+      gradient: 'from-green-400 to-emerald-500',
       data: gymBroPack.lunch.veg,
-      type: 'gymbro-lunch-veg',
       displayData: {
         main: gymBroPack.lunch.veg.main,
-        vegetables: gymBroPack.lunch.veg.protein, // Using veg field to show protein for this layout
+        vegetables: gymBroPack.lunch.veg.protein,
         carbs: gymBroPack.lunch.veg.carbs,
-        proteinLabel: true
       }
     },
     {
       id: 'lunch-nonveg',
       title: 'Lunch',
       sub: 'Non-Vegetarian',
-      image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=800',
+      icon: Drumstick,
+      gradient: 'from-red-500 to-orange-500',
       data: gymBroPack.lunch.nonVeg,
-      type: 'gymbro-lunch-nonveg',
       displayData: {
         main: gymBroPack.lunch.nonVeg.main,
         quantity: gymBroPack.lunch.nonVeg.quantity,
@@ -381,9 +532,9 @@ function GymBroSection({ gymBroPack, onEdit }: { gymBroPack: GymBroPack; onEdit:
       id: 'dinner',
       title: 'Dinner',
       sub: 'Daily',
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800',
+      icon: Moon,
+      gradient: 'from-purple-400 to-pink-500',
       data: gymBroPack.dinner,
-      type: 'gymbro-dinner',
       displayData: {
         main: gymBroPack.dinner.protein.join(', '),
         carbs: gymBroPack.dinner.carbs,
@@ -392,64 +543,89 @@ function GymBroSection({ gymBroPack, onEdit }: { gymBroPack: GymBroPack; onEdit:
     }
   ];
 
+
+  const gymImages: Record<string, string> = {
+    breakfast: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770298293/2_ieqhly.png', 
+    'lunch-veg': 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302235/g3_itjv4l.png', 
+    'lunch-nonveg': 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302235/g2_cj4k5o.png', 
+    dinner: 'https://res.cloudinary.com/didkrwhbu/image/upload/v1770302239/g1_m0kk7g.png', 
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {mealItems.map((item) => (
-          <Card key={item.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-0 shadow-md group bg-white">
-            <div className="relative h-48 w-full overflow-hidden">
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {mealItems.map((item, index) => {
+        const IconComponent = item.icon;
+        const imageSrc =
+          (item.data as any)?.image ||
+          gymImages[item.id] ||
+          'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800';
+
+        return (
+          <div
+            key={item.id}
+            className="card-premium rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-300 bg-white border border-border shadow-lg group"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <div className="relative h-52 w-full overflow-hidden bg-white">
+              <Image
+                src={imageSrc}
+                alt={`${item.title} - ${item.sub}`}
+                fill
+                className="object-cover p-3 transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute top-3 right-3 z-10 opacity-100 md:opacity-0 group-hover:md:opacity-100 transition-opacity duration-300 md:pointer-events-none group-hover:md:pointer-events-auto">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
+              
+              {/* Edit Button */}
+              <div className="absolute top-4 right-4">
                 <Button
                   size="icon"
-                  className="rounded-full h-10 w-10 bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white hover:text-purple-600 shadow-lg border border-white/20"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(item.sub, item.title, item.data);
-                  }}
+                  className="rounded-full h-10 w-10 bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white hover:text-purple-600 shadow-lg border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onEdit(item.sub, item.title, item.data)}
                 >
                   <Pencil className="h-5 w-5" />
                 </Button>
               </div>
-              <div className="absolute bottom-4 left-4 right-4 text-white">
-                <Badge variant="secondary" className="mb-2 bg-purple-500/90 text-white hover:bg-purple-500 backdrop-blur-md border-0 capitalize shadow-sm">
+
+              <div className="absolute top-4 left-4">
+                <h3 className="text-xl font-poppins font-bold text-white drop-shadow-lg">
+                  {item.title}
+                </h3>
+                <Badge variant="secondary" className="mt-1 bg-purple-500/90 text-white hover:bg-purple-500 backdrop-blur-md border-0 capitalize shadow-sm">
                   {item.sub}
                 </Badge>
-                <h3 className="text-2xl font-bold capitalize tracking-tight text-white mb-0.5">{item.title}</h3>
               </div>
             </div>
 
-            <CardContent className="p-5 space-y-4">
-              <div className="space-y-3">
+            <div className="p-6">
+              <div className="space-y-4">
+                {/* Meal Type Badge */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={`w-8 h-8 bg-gradient-to-br ${item.gradient} rounded-lg flex items-center justify-center shadow-sm`}>
+                    <IconComponent className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-sm font-semibold text-primary uppercase">Gym Bro</p>
+                </div>
+
                 {item.displayData.main && (
-                  <div className="group/item">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                      Main / Protein
-                    </span>
-                    <p className="text-gray-700 font-medium line-clamp-2 leading-snug">{item.displayData.main}</p>
+                  <div className="pb-3 border-b border-border">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Main / Protein</span>
+                    <p className="font-medium text-foreground">{item.displayData.main}</p>
                   </div>
                 )}
 
-                <div className="space-y-2 pt-2 border-t border-dashed border-gray-100">
-                  {item.displayData.quantity && (
-                    <div>
-                      <span className="text-xs font-bold text-gray-400 block mb-1.5 uppercase tracking-wider">Quantity</span>
-                      <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200 font-normal">
-                        {item.displayData.quantity}
-                      </Badge>
-                    </div>
-                  )}
+                {item.displayData.quantity && (
+                  <div>
+                    <span className="text-xs font-bold text-gray-400 block mb-1">Quantity</span>
+                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200 font-normal">
+                      {item.displayData.quantity}
+                    </Badge>
+                  </div>
+                )}
 
+                <div className="space-y-3 pt-2 border-t border-dashed border-gray-100">
                   {Array.isArray(item.displayData.vegetables) && item.displayData.vegetables.length > 0 && (
                     <div>
-                      <span className="text-xs font-bold text-green-600/80 block mb-1.5 uppercase tracking-wider">
-                        Vegetables
-                      </span>
+                      <span className="text-xs font-bold text-green-600/80 block mb-1.5 uppercase tracking-wider">Vegetables/Protein</span>
                       <div className="flex flex-wrap gap-1.5">
                         {item.displayData.vegetables.map((veg, i) => (
                           <Badge key={`v-${i}`} variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200 px-1.5 py-0.5 font-normal">
@@ -462,9 +638,7 @@ function GymBroSection({ gymBroPack, onEdit }: { gymBroPack: GymBroPack; onEdit:
 
                   {Array.isArray(item.displayData.carbs) && item.displayData.carbs.length > 0 && (
                     <div>
-                      <span className="text-xs font-bold text-yellow-600/80 block mb-1.5 uppercase tracking-wider">
-                        Carbs
-                      </span>
+                      <span className="text-xs font-bold text-yellow-600/80 block mb-1.5 uppercase tracking-wider">Carbs</span>
                       <div className="flex flex-wrap gap-1.5">
                         {item.displayData.carbs.map((carb, i) => (
                           <Badge key={`c-${i}`} variant="outline" className="text-[10px] bg-yellow-50 text-yellow-700 border-yellow-200 px-1.5 py-0.5 font-normal">
@@ -477,9 +651,7 @@ function GymBroSection({ gymBroPack, onEdit }: { gymBroPack: GymBroPack; onEdit:
 
                   {Array.isArray(item.displayData.sides) && item.displayData.sides.length > 0 && (
                     <div>
-                      <span className="text-xs font-bold text-blue-600/80 block mb-1.5 uppercase tracking-wider">
-                        Sides
-                      </span>
+                      <span className="text-xs font-bold text-blue-600/80 block mb-1.5 uppercase tracking-wider">Sides</span>
                       <div className="flex flex-wrap gap-1.5">
                         {item.displayData.sides.map((side, i) => (
                           <Badge key={`s-${i}`} variant="secondary" className="text-[10px] bg-blue-50 text-blue-700 border-blue-100 px-1.5 py-0.5 font-normal">
@@ -491,33 +663,10 @@ function GymBroSection({ gymBroPack, onEdit }: { gymBroPack: GymBroPack; onEdit:
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Customization Options</CardTitle>
-          <CardDescription>Frequency: {gymBroPack.customization.frequency}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {gymBroPack.customization.options.map((option, index) => (
-              <div key={index} className="border p-3 rounded-lg bg-gray-50">
-                <div className="font-medium capitalize mb-2">{option.type.replace('_', ' ')}</div>
-                <div className="flex flex-wrap gap-1">
-                  {option.options.map((opt, i) => (
-                    <Badge key={i} variant="secondary" className="bg-white">{opt}</Badge>
-                  ))}
-                </div>
-                {option.meal && <div className="text-xs text-gray-500 mt-2 capitalize">For: {option.meal}</div>}
-                {option.meals && <div className="text-xs text-gray-500 mt-2 capitalize">For: {option.meals.join(", ")}</div>}
-              </div>
-            ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        );
+      })}
     </div>
-  )
+  );
 }

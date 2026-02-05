@@ -9,6 +9,7 @@ export interface Root2 {
   dinner: Dinner2
   gymBroPack: GymBroPack
   pricing: Pricing
+  image?: string
 }
 
 export interface Id {
@@ -22,6 +23,7 @@ export interface SubscriptionType {
   dailyCostRange: DailyCostRange
   nonVegDetails?: NonVegDetails
   proteinTarget?: string
+  image?: string
 }
 
 export interface DailyCostRange {
