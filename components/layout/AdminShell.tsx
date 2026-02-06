@@ -43,6 +43,9 @@ export default function AdminShell({
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const activeKey = useMemo<NavKey>(() => {
     const activeItem = navItems.find((item) =>
@@ -57,6 +60,24 @@ export default function AdminShell({
     }
   };
 
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const params = new URLSearchParams(window.location.search);
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      } else {
+        params.delete('search');
+      }
+      router.push(`${pathname}?${params.toString()}`);
+      setIsSearchOpen(false);
+    }
+  };
+
+const handleLogout = () => {
+  document.cookie = "auth=; Max-Age=0; path=/";
+
+  window.location.href = "/login";
+};
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile overlay */}
@@ -119,11 +140,12 @@ export default function AdminShell({
           </div>
         </nav>
 
-        <div className="absolute bottom-0 w-full p-4 border-t">
-          <button className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition">
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
-          </button>
+        <div className="absolute bottom-0 w-full p-4 border-t">           
+           <button onClick={handleLogout}  className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition">
+           <LogOut className="w-5 h-5" />
+           <span>Logout</span>
+           </button>
+         
         </div>
       </aside>
 
@@ -131,8 +153,8 @@ export default function AdminShell({
       <div className="transition-all duration-300 md:ml-64 ml-0">
         {/* Top Header */}
         <header className="bg-white shadow-sm sticky top-0 z-30">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition md:hidden"
@@ -146,34 +168,81 @@ export default function AdminShell({
                 <input
                   type="text"
                   placeholder="Search orders, products..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 w-80"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 w-64 lg:w-80"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearch}
                 />
               </div>
+
+              <button
+                className="md:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+              >
+                <Search className="w-6 h-6" />
+              </button>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button className="relative p-2 hover:bg-gray-100 rounded-lg transition" aria-label="Notifications">
                 <Bell className="w-6 h-6 text-gray-600" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
 
-              <div className="flex items-center space-x-3 pl-4 border-l">
-                <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold">AS</span>
-                </div>
-                <div className="hidden md:block">
-                  <p className="font-semibold text-sm">Admin User</p>
-                  <p className="text-xs text-gray-500">admin@makhana.com</p>
-                </div>
-                <ChevronDown className="w-4 h-4 text-gray-600" />
+              <div className="relative">
+                <button
+                  className="flex items-center space-x-3 pl-2 sm:pl-4 sm:border-l hover:bg-gray-50 rounded-lg p-1 transition"
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm sm:text-base">AS</span>
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <p className="font-semibold text-sm">Admin User</p>
+                    <p className="text-xs text-gray-500">admin@makhana.com</p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border z-50">
+                    <div className="px-4 py-2 border-b md:hidden">
+                      <p className="font-semibold text-sm">Admin User</p>
+                      <p className="text-xs text-gray-500 truncate">admin@makhana.com</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+          {isSearchOpen && (
+            <div className="md:hidden px-4 pb-4 border-t pt-4">
+              <div className="relative">
+                <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearch}
+                />
+              </div>
+            </div>
+          )}
         </header>
 
-        <main className="p-6">{children}</main>
+        <main className="p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );
 }
-
