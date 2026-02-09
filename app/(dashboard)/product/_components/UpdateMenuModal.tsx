@@ -45,12 +45,13 @@ export function UpdateMenuModal({
     const formik = useFormik<MenuFormData>({
         initialValues: {
             name: initialData?.name || '',
-            main: initialData?.main || (typeof initialData?.protein === 'string' ? initialData.protein : initialData?.protein?.join(', ')) || '',
+            main: initialData?.main || (typeof initialData?.protein === 'string' ? initialData.protein : Array.isArray(initialData?.protein) ? initialData?.protein?.join(', ') : '') || '',
             quantity: initialData?.quantity || '',
             style: initialData?.style || '',
-            vegetables: (initialData?.vegetables || (initialData?.main && Array.isArray(initialData?.protein) ? initialData.protein : []))?.join(', ') || '',
-            carbs: initialData?.carbs?.join(', ') || '',
-            sides: initialData?.sides?.join(', ') || '',
+            vegetables: (Array.isArray(initialData?.vegetables) ? initialData.vegetables.join(', ') : '') || 
+                        (initialData?.main && Array.isArray(initialData?.protein) ? initialData.protein.join(', ') : '') || '',
+            carbs: Array.isArray(initialData?.carbs) ? initialData.carbs.join(', ') : (initialData?.carbs || ''),
+            sides: Array.isArray(initialData?.sides) ? initialData.sides.join(', ') : (initialData?.sides || ''),
             image: initialData?.image || '',
         },
         enableReinitialize: true,
